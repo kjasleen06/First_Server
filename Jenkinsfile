@@ -4,15 +4,14 @@ pipeline {
     environment {
         IMAGE_NAME = 'flask-first-server'
         IMAGE_TAG = 'latest'
-        DOCKER_HUB_USER = 'yourusername' // replace with your Docker Hub username
+        DOCKER_HUB_USER = 'yourusername' // Replace with your Docker Hub username
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                // Jenkins will automatically pull your Git repo if you use "Pipeline script from SCM"
-                echo "Code checked out from Git"
+                echo "Code checked out from Git (handled by Pipeline script from SCM)"
             }
         }
 
@@ -20,8 +19,8 @@ pipeline {
             steps {
                 echo "Creating virtual environment and installing dependencies"
                 bat 'python -m venv venv'
-                bat '.\\venv\\Scripts\\pip.exe install --upgrade pip'
-                bat '.\\venv\\Scripts\\pip.exe install -r requirements.txt'
+                bat '.\\venv\\Scripts\\python.exe -m pip install --upgrade pip'
+                bat '.\\venv\\Scripts\\python.exe -m pip install -r requirements.txt'
             }
         }
 
@@ -59,9 +58,11 @@ pipeline {
         stage('Run Container Locally') {
             steps {
                 echo "Stopping old container (if exists) and running new container"
-                bat 'docker stop flask-first-server || echo No container running'
-                bat 'docker rm flask-first-server || echo No container to remove'
-                bat 'docker run -d -p 8000:8000 --name flask-first-server %DOCKER_HUB_USER%/%IMAGE_NAME%:%IMAGE_TAG%'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    bat 'docker stop flask-first-server || echo No container running'
+                    bat 'docker rm flask-first-server || echo No container to remove'
+                    bat 'docker run -d -p 8000:8000 --name flask-first-server %DOCKER_HUB_USER%/%IMAGE_NAME%:%IMAGE_TAG%'
+                }
             }
         }
     }
